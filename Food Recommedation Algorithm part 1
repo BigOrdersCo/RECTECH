@@ -1,0 +1,32 @@
+import numpy as np
+from sklearn.metrics.pairwise import cosine_similarity
+
+# Sample data (you'll replace this with real data from your database)
+users = {
+    'user1': {'spicy': 5, 'sweet': 2, 'savory': 3},
+    'user2': {'spicy': 2, 'sweet': 5, 'savory': 3},
+    'user3': {'spicy': 3, 'sweet': 3, 'savory': 5},
+    'user4': {'spicy': 5, 'sweet': 1, 'savory': 4},
+    'user5': {'spicy': 1, 'sweet': 5, 'savory': 2},
+}
+
+dishes = {
+    'dish1': {'spicy': 5, 'sweet': 1, 'savory': 3},
+    'dish2': {'spicy': 2, 'sweet': 5, 'savory': 4},
+    'dish3': {'spicy': 4, 'sweet': 2, 'savory': 5},
+    # add more dishes
+}
+
+# Convert data to matrices for computation
+user_matrix = np.array([list(user.values()) for user in users.values()])
+dish_matrix = np.array([list(dish.values()) for dish in dishes.values()])
+
+# Compute similarity scores
+similarity_scores = cosine_similarity(user_matrix, dish_matrix)
+
+
+#test to check if algorithm works
+# Recommend dishes for each user
+for idx, user in enumerate(users.keys()):
+    recommended_dish_idx = np.argmax(similarity_scores[idx])
+    print(f"{user} should try {list(dishes.keys())[recommended_dish_idx]}")
