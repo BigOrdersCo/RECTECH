@@ -1,32 +1,37 @@
 import numpy as np
 from sklearn.metrics.pairwise import cosine_similarity
 
-# Sample data (you'll replace this with real data from your database)
+# Sample data
 users = {
-    'user1': {'spicy': 5, 'sweet': 2, 'savory': 3},
-    'user2': {'spicy': 2, 'sweet': 5, 'savory': 3},
-    'user3': {'spicy': 3, 'sweet': 3, 'savory': 5},
-    'user4': {'spicy': 5, 'sweet': 1, 'savory': 4},
-    'user5': {'spicy': 1, 'sweet': 5, 'savory': 2},
+    'user1': {'spicy': 5, 'sweet': 2, 'savory': 3, 'allergies': ['peanuts']},
+    'user2': {'spicy': 2, 'sweet': 5, 'savory': 3, 'allergies': []},
+    'user3': {'spicy': 3, 'sweet': 3, 'savory': 5, 'allergies': ['shellfish']},
+    'user4': {'spicy': 5, 'sweet': 1, 'savory': 4, 'allergies': []},
+    'user5': {'spicy': 1, 'sweet': 5, 'savory': 2, 'allergies': ['peanuts', 'shellfish']},
 }
 
 dishes = {
-    'dish1': {'spicy': 5, 'sweet': 1, 'savory': 3},
-    'dish2': {'spicy': 2, 'sweet': 5, 'savory': 4},
-    'dish3': {'spicy': 4, 'sweet': 2, 'savory': 5},
-    # add more dishes
+    'dish1': {'spicy': 5, 'sweet': 1, 'savory': 3, 'allergens': ['peanuts']},
+    'dish2': {'spicy': 2, 'sweet': 5, 'savory': 4, 'allergens': []},
+    'dish3': {'spicy': 4, 'sweet': 2, 'savory': 5, 'allergens': ['shellfish']},
 }
 
 # Convert data to matrices for computation
-user_matrix = np.array([list(user.values()) for user in users.values()])
-dish_matrix = np.array([list(dish.values()) for dish in dishes.values()])
+user_matrix = np.array([list(user.values())[:-1] for user in users.values()])  # Exclude allergies
+dish_matrix = np.array([list(dish.values())[:-1] for dish in dishes.values()])  # Exclude allergens
 
 # Compute similarity scores
 similarity_scores = cosine_similarity(user_matrix, dish_matrix)
 
-
-#test to check if algorithm works
 # Recommend dishes for each user
-for idx, user in enumerate(users.keys()):
+for idx, user_key in enumerate(users.keys()):
+    user = users[user_key]
     recommended_dish_idx = np.argmax(similarity_scores[idx])
-    print(f"{user} should try {list(dishes.keys())[recommended_dish_idx]}")
+    recommended_dish_key = list(dishes.keys())[recommended_dish_idx]
+    recommended_dish = dishes[recommended_dish_key]
+    
+    # Check for allergens
+    if any(allergen in user['allergies'] for allergen in recommended_dish['allergens']):
+        print(f"{user_key} cannot try {recommended_dish_key} due to allergen concerns.")
+    else:
+        print(f"{user_key} should try {recommended_dish_key}")
