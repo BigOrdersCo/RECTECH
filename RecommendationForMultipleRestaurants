@@ -1,0 +1,60 @@
+import numpy as np
+from sklearn.metrics.pairwise import cosine_similarity
+
+# Sample data
+users = {
+    'user1': {'spicy': 5, 'sweet': 2, 'savory': 3, 'allergies': ['peanuts']},
+    'user2': {'spicy': 2, 'sweet': 5, 'savory': 3, 'allergies': []},
+    'user3': {'spicy': 3, 'sweet': 3, 'savory': 5, 'allergies': ['shellfish']},
+    # ... other users
+}
+
+restaurants = {
+    'restaurant1': {
+        'dish1': {'spicy': 5, 'sweet': 1, 'savory': 3, 'allergens': ['peanuts']},
+        'dish2': {'spicy': 3, 'sweet': 4, 'savory': 4, 'allergens': []},
+    },
+    'restaurant2': {
+        'dish1': {'spicy': 2, 'sweet': 5, 'savory': 4, 'allergens': []},
+        'dish2': {'spicy': 4, 'sweet': 2, 'savory': 5, 'allergens': ['shellfish']},
+    }
+}
+
+# Flatten the restaurant and dish structure for easier processing
+dishes = {}
+for restaurant, menu in restaurants.items():
+    for dish, attributes in menu.items():
+        dishes[f"{restaurant}_{dish}"] = attributes
+
+# Convert data to matrices for computation
+user_matrix = np.array([list(user.values())[:-1] for user in users.values()])  # Exclude allergies
+dish_matrix = np.array([list(dish.values())[:-1] for dish in dishes.values()])  # Exclude allergens
+
+# Compute similarity scores
+similarity_scores = cosine_similarity(user_matrix, dish_matrix)
+
+# Recommend dishes for each user
+for idx, user_key in enumerate(users.keys()):
+    user = users[user_key]
+    recommended_dish_idx = np.argmax(similarity_scores[idx])
+    recommended_dish_key = list(dishes.keys())[recommended_dish_idx]
+    recommended_dish = dishes[recommended_dish_key]
+    
+    # Extract restaurant and dish name from the key
+    restaurant_name, dish_name = recommended_dish_key.split('_')
+    
+    # Check for allergens
+    reasons = []
+    if any(allergen in user['allergies'] for allergen in recommended_dish['allergens']):
+        print(f"{user_key} cannot try {dish_name} from {restaurant_name} due to allergen concerns.")
+        continue
+    else:
+        if recommended_dish['spicy'] == user['spicy']:
+            reasons.append("matching spice level")
+        if recommended_dish['sweet'] == user['sweet']:
+            reasons.append("matching sweetness level")
+        if recommended_dish['savory'] == user['savory']:
+            reasons.append("matching savory level")
+        
+        reasons_str = ', '.join(reasons)
+        print(f"{user_key} should try {dish_name} from {restaurant_name} because of {reasons_str}.")
