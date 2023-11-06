@@ -1,0 +1,58 @@
+import numpy as np
+from sklearn.metrics.pairwise import cosine_similarity
+
+# Sample user data including taste profile and order history
+user = {
+    'taste_profile': {'spicy': 5, 'sweet': 2, 'savory': 3},
+    'allergies': ['peanuts'],
+    'order_history': ['Chili Paneer', 'Vegetable Biryani'],
+}
+
+# Sample restaurant menu data
+restaurant_menu = {
+    'Chili Paneer': {'spicy': 5, 'sweet': 1, 'savory': 3, 'allergens': [], 'tried': True},
+    'Lamb Vindaloo': {'spicy': 5, 'sweet': 1, 'savory': 4, 'allergens': [], 'tried': False},
+    'Vegetable Biryani': {'spicy': 2, 'sweet': 2, 'savory': 5, 'allergens': [], 'tried': True},
+    'Paneer Tikka': {'spicy': 3, 'sweet': 2, 'savory': 4, 'allergens': [], 'tried': False},
+    'Mango Lassi': {'spicy': 0, 'sweet': 5, 'savory': 0, 'allergens': [], 'tried': False},
+    # ... other dishes ...
+}
+
+def recommend_dishes(user, restaurant_menu):
+    # Convert user's taste profile and menu into a comparable format
+    user_profile_vector = np.array(list(user['taste_profile'].values()))
+    menu_vectors = {dish: np.array(list(attributes.values())[:-2]) for dish, attributes in restaurant_menu.items()}  # Exclude allergens and 'tried' flag
+    
+    # Compute similarity scores for taste profile
+    similarity_scores = {dish: cosine_similarity([user_profile_vector], [profile])[0][0] for dish, profile in menu_vectors.items()}
+
+    # Recommend based on taste profile
+    taste_recommendation = max(similarity_scores, key=similarity_scores.get)
+    
+    # Recommend based on comfort (previous orders)
+    comfort_dishes = [dish for dish in user['order_history']]
+    comfort_recommendation = max(comfort_dishes, key=lambda dish: similarity_scores[dish])
+
+    # Recommend based on risk (never tried)
+    risky_dishes = [dish for dish, attributes in restaurant_menu.items() if not attributes['tried'] and not any(allergen in user['allergies'] for allergen in attributes['allergens'])]
+    risky_recommendation = risky_dishes[np.random.randint(len(risky_dishes))] if risky_dishes else None
+
+    # Generate recommendations with reasons
+    recommendations = {
+        'Taste Match': (taste_recommendation, 'This dish matches your taste profile preferences.'),
+        'Comfort': (comfort_recommendation, 'This dish is similar to what you have enjoyed in the past.'),
+        'Risky Choice': (risky_recommendation, 'This dish is something new for you to try.')
+    }
+
+    return recommendations
+
+# Generate recommendations
+recommendations = recommend_dishes(user, restaurant_menu)
+
+# Print recommendations with reasons
+for category, (dish, reason) in recommendations.items():
+    if dish:
+        print(f"{category} Recommendation: {dish} - {reason}")
+    else:
+        print(f"{category} Recommendation: No suitable dish found.")
+
