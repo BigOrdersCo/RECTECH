@@ -1,0 +1,48 @@
+import requests
+from bs4 import BeautifulSoup
+from urllib.parse import urlparse, urljoin
+
+def get_menu_url(restaurant_url):
+    try:
+        # Step 1: Send a request to the website
+        response = requests.get(restaurant_url)
+        response.raise_for_status()  # Check for request errors
+        
+        # Step 2: Parse the HTML content with BeautifulSoup
+        soup = BeautifulSoup(response.content, 'html.parser')
+        
+        # Step 3: Extract all links
+        links = soup.find_all('a', href=True)
+        
+        # Step 4: Search for a likely "menu" page
+        for link in links:
+            href = link['href']
+            text = link.get_text().lower()
+            
+            # Check if "menu" is in the link text or href, and skip internal anchors
+            if ('menu' in text or 'menu' in href) and not href.startswith('#'):
+                # Use urljoin to handle both relative and absolute URLs correctly
+                menu_url = urljoin(restaurant_url, href)
+                
+                # Validate if the URL is still within the restaurant's domain
+                parsed_menu_url = urlparse(menu_url)
+                parsed_restaurant_url = urlparse(restaurant_url)
+                
+                # Only return URLs that are in the same domain as the restaurant
+                if parsed_menu_url.netloc == '' or parsed_menu_url.netloc == parsed_restaurant_url.netloc:
+                    return menu_url  # Return the first valid match
+        
+        # If no valid menu link is found, return None
+        return None
+    
+    except requests.RequestException as e:
+        print(f"Error fetching the restaurant website: {e}")
+        return None
+
+# Test with Grand Lakes Chinese website
+restaurant_url = "https://ginzasushiramen.com/"
+menu_url = get_menu_url(restaurant_url)
+if menu_url:
+    print(f"Menu page found: {menu_url}")
+else:
+    print("Menu page not found.")
